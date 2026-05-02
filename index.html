@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Living Word | Master Restoration</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, getDocs, query, orderBy, where, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+  apiKey: "AIzaSyBI_Hm3CcapHZaFnuypy43cKveGlunRyK0",
+  authDomain: "written-778d3.firebaseapp.com",
+  projectId: "written-778d3",
+  storageBucket: "written-778d3.firebasestorage.app",
+  messagingSenderId: "378740464793",
+  appId: "1:378740464793:web:72750b4d1e119022ae6c08",
+  measurementId: "G-1EZG3YWKLL"
+};
+        const app = initializeApp(firebaseConfig);
+        window.fb = { 
+            auth: getAuth(app), db: getFirestore(app), 
+            signInWithEmailAndPassword, signOut, onAuthStateChanged, doc, setDoc, onSnapshot, collection, addDoc, getDocs, query, orderBy, where, deleteDoc, updateDoc 
+        };
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500&family=Inter:wght@300;400;600&display=swap');
+        body { background: #020202; color: #fff; font-family: 'Inter', sans-serif; }
+        .font-sacred { font-family: 'Cinzel', serif; }
+        .btn-gold { background: #d4af37; color: #000; font-weight: bold; transition: 0.3s; }
+        .theme-circle { width: 160px; height: 160px; border-radius: 50%; overflow: hidden; border: 2px solid #1a1a1a; transition: 0.5s; position: relative; }
+        .theme-circle:hover { border-color: #d4af37; transform: scale(1.05); }
+        .verse-float { transition: 1s cubic-bezier(0.23, 1, 0.32, 1); }
+        button:disabled { opacity: 0.2; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <nav class="p-4 bg-black/95 border-b border-white/5 flex justify-between items-center sticky top-0 z-50">
+        <h1 class="font-sacred text-[#d4af37] tracking-[0.2em] text-xs cursor-pointer" onclick="location.reload()">THE LIVING WORD</h1>
+        <div class="flex items-center gap-4">
+            <input type="text" id="user-search" oninput="filterThemes()" placeholder="Search Library..." class="bg-white/5 border border-white/10 rounded-full px-4 py-1 text-[10px] outline-none focus:border-[#d4af37] w-32 md:w-48">
+            <button id="adm-nav-btn" onclick="showPage('login')" class="text-[9px] uppercase border border-[#d4af37] text-[#d4af37] px-4 py-1 rounded-full">Admin</button>
+        </div>
+    </nav>
+
+    <section id="page-user" class="min-h-screen py-12 px-6">
+        <div id="grid-container" class="max-w-6xl mx-auto flex flex-wrap justify-center gap-10"></div>
+
+        <div id="meditation-zone" class="hidden flex flex-col items-center pt-10">
+            <div class="w-full max-w-sm flex justify-between mb-4">
+                <button onclick="exitMeditation()" class="text-[10px] text-red-500 uppercase tracking-widest">✕ Exit</button>
+                <div id="mic-status" class="text-[10px] text-zinc-500 uppercase tracking-widest">Listening...</div>
+            </div>
+            
+            <div id="progress-container" class="w-full max-w-sm mb-12">
+                <div class="flex justify-between text-[9px] uppercase mb-2 text-zinc-500">
+                    <span>Verse <span id="verse-count">1</span>/<span id="total-verses">1</span></span>
+                </div>
+                <div class="h-[1px] bg-white/10 w-full overflow-hidden">
+                    <div id="verse-prog-bar" class="h-full bg-[#d4af37] w-0 transition-all duration-300"></div>
+                </div>
+            </div>
+
+            <div id="scripture-area" class="max-w-2xl text-center min-h-[200px] flex flex-col justify-center">
+                <div id="active-verse-text" class="text-2xl font-light italic text-zinc-300 verse-float"></div>
+                <div id="active-verse-ref" class="mt-6 font-sacred text-[#d4af37] text-[10px] tracking-widest"></div>
+            </div>
+
+            <div class="flex gap-8 items-center mt-12">
+                <button id="btn-prev" onclick="prevVerse()" class="text-white/40 hover:text-white uppercase text-[10px] tracking-widest">Previous</button>
+                <button id="btn-amen" disabled onclick="openAmenModal()" class="px-16 py-4 rounded-full border border-zinc-800 text-zinc-800 font-bold uppercase transition-all">AMEN</button>
+                <button id="btn-next" onclick="nextVerse()" class="text-white/40 hover:text-white uppercase text-[10px] tracking-widest">Next</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="page-login" class="hidden min-h-[80vh] flex items-center justify-center">
+        <div class="bg-zinc-900/40 p-8 rounded-[2rem] border border-white/5 w-80 text-center">
+            <h2 class="font-sacred text-lg mb-6">Sanctuary Access</h2>
+            <input type="email" id="adm-email" placeholder="Email" class="w-full bg-black border border-white/10 p-3 rounded-xl mb-3 outline-none">
+            <input type="password" id="adm-pass" placeholder="Password" class="w-full bg-black border border-white/10 p-3 rounded-xl mb-6 outline-none">
+            <button onclick="handleLogin()" class="w-full btn-gold py-3 rounded-xl text-xs uppercase">Enter</button>
+        </div>
+    </section>
+
+    <section id="page-admin" class="hidden p-6 lg:p-12">
+        <div class="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
+            <h2 class="font-sacred text-[#d4af37] text-xl">Word Architect</h2>
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col gap-1">
+                    <select id="export-theme" class="bg-black border border-white/10 text-[10px] px-2 py-1 rounded">
+                        <option value="">Select Theme</option>
+                    </select>
+                    <input type="date" id="export-date" class="bg-black border border-white/10 text-[10px] px-2 py-1 rounded">
+                </div>
+                <button onclick="exportThemeDaily()" class="text-[9px] bg-green-900/20 text-green-500 px-4 py-2 rounded-full border border-green-500/20">EXPORT BY DAY</button>
+                <button onclick="handleLogout()" class="text-[9px] text-red-500 uppercase">Sign Out</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div class="bg-zinc-950 p-8 rounded-[2rem] border border-white/5 space-y-6">
+                <input type="hidden" id="edit-id">
+                <input type="text" id="in-theme" placeholder="Theme Title" class="w-full bg-black border border-white/10 p-4 rounded-2xl outline-none focus:border-[#d4af37]">
+                <div class="p-4 border border-dashed border-white/10 rounded-2xl">
+                    <input type="file" id="in-file" accept="image/*" class="text-[10px] text-zinc-500">
+                </div>
+                <div id="verse-inputs" class="space-y-4"></div>
+                <button onclick="addVerseField()" class="w-full py-3 border border-white/10 rounded-2xl text-[9px] uppercase opacity-40 hover:opacity-100">+ Add Scripture</button>
+                <button onclick="saveTheme()" class="w-full btn-gold py-4 rounded-2xl uppercase text-xs">Save & Manifest</button>
+            </div>
+
+            <div class="space-y-8">
+                <div class="bg-zinc-950 p-8 rounded-[2rem] border border-white/5">
+                    <h3 class="text-[10px] uppercase text-zinc-500 mb-6">Amen Analytics</h3>
+                    <canvas id="leadsChart" height="150"></canvas>
+                </div>
+                <div id="admin-theme-list" class="space-y-3 max-h-96 overflow-y-auto"></div>
+            </div>
+        </div>
+    </section>
+
+    <div id="modal-amen" class="fixed inset-0 bg-black/95 hidden z-[100] flex items-center justify-center p-6">
+        <div class="bg-zinc-900 p-10 rounded-[2.5rem] w-80 text-center border border-[#d4af37]/20">
+            <h3 class="font-sacred text-[#d4af37] text-lg mb-6">Seal Your Word</h3>
+            <input type="text" id="reg-name" placeholder="Full Name" class="w-full bg-black border border-white/10 p-4 rounded-2xl mb-3 outline-none">
+            <input type="tel" id="reg-phone" placeholder="Phone Number" class="w-full bg-black border border-white/10 p-4 rounded-2xl mb-8 outline-none">
+            <button onclick="submitAmen()" class="w-full btn-gold py-4 rounded-2xl">SUBMIT AMEN</button>
+        </div>
+    </div>
+
+    <script>
+        let currentVerseIndex = 0;
+        let activeVerses = [];
+        let allThemes = [];
+        let recognition;
+        let voiceSet = new Set();
+        let isMeditationActive = false;
+        let currentThemeName = "";
+        let completionStatus = []; // Tracks which verses were successfully spoken
+
+        // --- AUTH ---
+        async function handleLogin() {
+            const e = document.getElementById('adm-email').value;
+            const p = document.getElementById('adm-pass').value;
+            try { 
+                await fb.signInWithEmailAndPassword(fb.auth, e, p); 
+                showPage('admin'); 
+            } catch(err) { alert("Access Denied"); }
+        }
+        function handleLogout() { fb.signOut(fb.auth).then(() => location.reload()); }
+
+        // --- CORE NAVIGATION ---
+        function exitMeditation() {
+            isMeditationActive = false;
+            if(recognition) recognition.stop();
+            document.getElementById('meditation-zone').classList.add('hidden');
+            document.getElementById('grid-container').classList.remove('hidden');
+        }
+
+        function nextVerse() {
+            if (currentVerseIndex < activeVerses.length - 1) {
+                currentVerseIndex++;
+                loadVerse(currentVerseIndex);
+            }
+        }
+
+        function prevVerse() {
+            if (currentVerseIndex > 0) {
+                currentVerseIndex--;
+                loadVerse(currentVerseIndex);
+            }
+        }
+
+        // --- CORE UI & SEARCH ---
+        function initLibrary() {
+            fb.onSnapshot(fb.query(fb.collection(fb.db, "themes"), fb.orderBy("timestamp", "desc")), (snap) => {
+                allThemes = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderGrid(allThemes);
+                renderAdminList(allThemes);
+                populateExportOptions();
+            });
+            initAnalytics();
+        }
+
+        function populateExportOptions() {
+            const select = document.getElementById('export-theme');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">Select Theme</option>' + 
+                allThemes.map(t => `<option value="${t.theme}">${t.theme}</option>`).join('');
+            select.value = currentVal;
+        }
+
+        function renderGrid(themes) {
+            const grid = document.getElementById('grid-container');
+            grid.innerHTML = themes.map(t => `
+                <div onclick="openMeditation('${t.id}')" class="flex flex-col items-center gap-4 cursor-pointer group">
+                    <div class="theme-circle">
+                        <img src="${t.image}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition duration-700">
+                    </div>
+                    <h3 class="font-sacred text-[9px] tracking-[0.2em] uppercase text-zinc-500 group-hover:text-[#d4af37] transition">${t.theme}</h3>
+                </div>
+            `).join('');
+        }
+
+        // --- VOICE ENGINE ---
+        async function openMeditation(id) {
+            const target = allThemes.find(t => t.id === id);
+            activeVerses = target.verses;
+            currentThemeName = target.theme;
+            currentVerseIndex = 0;
+            completionStatus = new Array(activeVerses.length).fill(false);
+            
+            document.getElementById('grid-container').classList.add('hidden');
+            document.getElementById('meditation-zone').classList.remove('hidden');
+            document.getElementById('total-verses').innerText = activeVerses.length;
+            document.getElementById('btn-amen').disabled = true;
+            
+            isMeditationActive = true;
+            loadVerse(0);
+            initMic();
+        }
+
+        function loadVerse(index) {
+            const display = document.getElementById('active-verse-text');
+            const refDisp = document.getElementById('active-verse-ref');
+            const progBar = document.getElementById('verse-prog-bar');
+            
+            display.style.opacity = "0";
+            voiceSet.clear();
+            
+            setTimeout(() => {
+                display.innerText = activeVerses[index].text;
+                refDisp.innerText = activeVerses[index].ref;
+                display.style.opacity = "1";
+                document.getElementById('verse-count').innerText = index + 1;
+                
+                // If already completed previously in session, show 100%
+                progBar.style.width = completionStatus[index] ? "100%" : "0%";
+                
+                // Nav buttons
+                document.getElementById('btn-prev').disabled = index === 0;
+                document.getElementById('btn-next').disabled = index === activeVerses.length - 1;
+            }, 500);
+        }
+
+        function initMic() {
+            const Rec = window.webkitSpeechRecognition || window.SpeechRecognition;
+            if(!Rec) return;
+            recognition = new Rec();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.onresult = (e) => {
+                if(!isMeditationActive) return;
+                let trans = "";
+                for(let i = e.resultIndex; i < e.results.length; ++i) trans += e.results[i][0].transcript.toLowerCase();
+                
+                const targetText = activeVerses[currentVerseIndex].text.toLowerCase();
+                const targetWords = targetText.split(/\W+/).filter(w => w.length > 2);
+                
+                targetWords.forEach(w => { if(trans.includes(w)) voiceSet.add(w); });
+                
+                const prog = Math.min((voiceSet.size / targetWords.length) * 100, 100);
+                document.getElementById('verse-prog-bar').style.width = prog + "%";
+                
+                if(prog >= 85) {
+                    completionStatus[currentVerseIndex] = true;
+                    checkOverallCompletion();
+                }
+            };
+            recognition.onend = () => { if(isMeditationActive) recognition.start(); };
+            recognition.start();
+        }
+
+        function checkOverallCompletion() {
+            const isFinished = completionStatus.every(status => status === true);
+            if(isFinished) {
+                const btn = document.getElementById('btn-amen');
+                btn.disabled = false;
+                btn.className = "mt-16 px-16 py-4 rounded-full btn-gold text-black shadow-2xl scale-105 transition-all";
+            }
+        }
+
+        // --- EXPORT LOGIC ---
+        async function exportThemeDaily() {
+            const theme = document.getElementById('export-theme').value;
+            const dateStr = document.getElementById('export-date').value;
+            if(!theme || !dateStr) return alert("Select theme and date first.");
+
+            // Create date range for the selected day
+            const start = new Date(dateStr);
+            start.setHours(0,0,0,0);
+            const end = new Date(dateStr);
+            end.setHours(23,59,59,999);
+
+            try {
+                const q = fb.query(
+                    fb.collection(fb.db, "userLeads"),
+                    fb.where("theme", "==", theme),
+                    fb.where("timestamp", ">=", start),
+                    fb.where("timestamp", "<=", end)
+                );
+                
+                const snap = await fb.getDocs(q);
+                const data = snap.docs.map(d => {
+                    const docData = d.data();
+                    return {
+                        Name: docData.name,
+                        Phone: docData.phone,
+                        Theme: docData.theme,
+                        Time: docData.timestamp.toDate().toLocaleString()
+                    };
+                });
+
+                if(data.length === 0) return alert("No leads found for this theme on this day.");
+
+                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Leads");
+                XLSX.writeFile(wb, `${theme}_Leads_${dateStr}.xlsx`);
+            } catch(e) {
+                console.error(e);
+                alert("Error exporting. Ensure you have created the required index in Firebase.");
+            }
+        }
+
+        // (Keeping helper functions: addVerseField, saveTheme, fetchVerse, compressImage, resetEditor, loadForEdit, filterThemes, renderAdminList, initAnalytics, submitAmen, showPage, openAmenModal)
+        // [Existing helper functions from your source remain exactly the same below]
+        
+        async function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600;
+                        const scale = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                };
+            });
+        }
+
+        async function fetchVerse(btn) {
+            const container = btn.closest('.verse-entry');
+            const ref = container.querySelector('.v-ref').value;
+            if(!ref) return;
+            btn.innerText = "...";
+            try {
+                const res = await fetch(`https://bible-api.com/${ref}`);
+                const data = await res.json();
+                container.querySelector('.v-text').value = data.text;
+                btn.innerText = "OK";
+            } catch(e) { btn.innerText = "ERR"; }
+        }
+
+        function addVerseField(val = {ref: '', text: ''}) {
+            const div = document.createElement('div');
+            div.className = "verse-entry bg-black p-4 rounded-2xl border border-white/5 space-y-2";
+            div.innerHTML = `
+                <div class="flex gap-2">
+                    <input type="text" placeholder="Reference" class="v-ref flex-1 bg-zinc-900 p-2 rounded-lg text-xs" value="${val.ref}">
+                    <button onclick="fetchVerse(this)" class="bg-zinc-800 px-3 rounded-lg text-[9px]">API</button>
+                </div>
+                <textarea class="v-text w-full bg-zinc-900 p-2 rounded-lg text-xs" rows="2">${val.text}</textarea>
+                <button onclick="this.parentElement.remove()" class="text-[8px] text-red-500 uppercase">Delete</button>
+            `;
+            document.getElementById('verse-inputs').appendChild(div);
+        }
+
+        async function saveTheme() {
+            const id = document.getElementById('edit-id').value;
+            const fileInput = document.getElementById('in-file');
+            let b64 = "";
+
+            if(fileInput.files[0]) { b64 = await compressImage(fileInput.files[0]); }
+            else if(id) { b64 = allThemes.find(t => t.id === id).image; }
+
+            const verses = [];
+            document.querySelectorAll('.verse-entry').forEach(el => {
+                const text = el.querySelector('.v-text').value;
+                const ref = el.querySelector('.v-ref').value;
+                if(text && ref) verses.push({ ref, text });
+            });
+
+            const data = { theme: document.getElementById('in-theme').value, image: b64, verses, timestamp: new Date() };
+            if(id) await fb.updateDoc(fb.doc(fb.db, "themes", id), data);
+            else await fb.addDoc(fb.collection(fb.db, "themes"), data);
+            
+            alert("Manifested.");
+            resetEditor();
+        }
+
+        function resetEditor() {
+            document.getElementById('edit-id').value = "";
+            document.getElementById('in-theme').value = "";
+            document.getElementById('verse-inputs').innerHTML = "";
+            document.getElementById('in-file').value = "";
+        }
+
+        function loadForEdit(id, theme, vJson) {
+            const verses = JSON.parse(decodeURIComponent(vJson));
+            document.getElementById('edit-id').value = id;
+            document.getElementById('in-theme').value = theme;
+            document.getElementById('verse-inputs').innerHTML = "";
+            verses.forEach(v => addVerseField(v));
+        }
+
+        function filterThemes() {
+            const term = document.getElementById('user-search').value.toLowerCase();
+            const filtered = allThemes.filter(t => t.theme.toLowerCase().includes(term));
+            renderGrid(filtered);
+        }
+
+        function renderAdminList(themes) {
+            const list = document.getElementById('admin-theme-list');
+            list.innerHTML = themes.map(t => `
+                <div class="bg-zinc-900 p-4 rounded-2xl flex justify-between items-center border border-white/5">
+                    <div class="text-xs font-sacred text-zinc-400">${t.theme}</div>
+                    <div class="flex gap-3">
+                        <button onclick="loadForEdit('${t.id}', '${t.theme}', '${encodeURIComponent(JSON.stringify(t.verses))}')" class="text-[9px] text-[#d4af37]">EDIT</button>
+                        <button onclick="fb.deleteDoc(fb.doc(fb.db, 'themes', '${t.id}'))" class="text-[9px] text-red-500">DELETE</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function initAnalytics() {
+            fb.onSnapshot(fb.collection(fb.db, "userLeads"), (snap) => {
+                const leads = snap.docs.map(d => d.data());
+                const counts = {};
+                leads.forEach(l => counts[l.theme] = (counts[l.theme] || 0) + 1);
+                const ctx = document.getElementById('leadsChart').getContext('2d');
+                if(window.myChart) window.myChart.destroy();
+                window.myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: '#d4af37' }] },
+                    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#111' } } } }
+                });
+            });
+        }
+
+        async function submitAmen() {
+            const name = document.getElementById('reg-name').value;
+            const phone = document.getElementById('reg-phone').value;
+            if(!name || !phone) return;
+            await fb.addDoc(fb.collection(fb.db, "userLeads"), { name, phone, theme: currentThemeName, timestamp: new Date() });
+            alert("Amen Sealed."); location.reload();
+        }
+
+        function showPage(id) {
+            ['page-user', 'page-admin', 'page-login'].forEach(p => document.getElementById(p).classList.add('hidden'));
+            document.getElementById('page-' + id).classList.remove('hidden');
+        }
+
+        function openAmenModal() { document.getElementById('modal-amen').classList.remove('hidden'); }
+
+        window.onload = () => {
+            initLibrary();
+            fb.onAuthStateChanged(fb.auth, u => { 
+                if(u) { 
+                    document.getElementById('adm-nav-btn').innerText = "Dashboard"; 
+                    document.getElementById('adm-nav-btn').onclick = () => showPage('admin'); 
+                } 
+            });
+        };
+    </script>
+</body>
+</html>
