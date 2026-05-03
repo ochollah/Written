@@ -31,143 +31,207 @@
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500&family=Inter:wght@300;400;600&display=swap');
-        body { background: #020202; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .font-sacred { font-family: 'Cinzel', serif; }
-        .btn-gold { background: #d4af37; color: #000; font-weight: bold; transition: 0.3s; }
-        .theme-circle { width: 160px; height: 160px; border-radius: 50%; overflow: hidden; border: 2px solid #1a1a1a; transition: 0.5s; position: relative; background: #050505; }
-        .theme-circle:hover { border-color: #d4af37; transform: scale(1.05); }
-        .verse-float { transition: 0.8s cubic-bezier(0.23, 1, 0.32, 1); }
-        button:disabled { opacity: 0.2; cursor: not-allowed; }
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
         
-        .scripture-frame {
-            border: 1px solid rgba(212, 175, 55, 0.15);
-            padding: 3rem;
+        :root {
+            --gold: #d4af37;
+            --dark-bg: #020202;
+            --glass: rgba(255, 255, 255, 0.03);
+        }
+
+        body { background: var(--dark-bg); color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .font-sacred { font-family: 'Cinzel', serif; }
+        
+        .btn-gold { 
+            background: var(--gold); 
+            color: #000; 
+            font-weight: 600; 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+        }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4); }
+
+        .theme-circle { 
+            width: 140px; height: 140px; 
+            border-radius: 50%; 
+            overflow: hidden; 
+            border: 1px solid rgba(212, 175, 55, 0.1); 
+            transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+            background: #050505; 
+        }
+        .theme-circle:hover { border-color: var(--gold); transform: scale(1.08); }
+
+        /* Modern Scripture Display */
+        .scripture-display-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 2rem;
+            padding: 3rem 2rem;
             position: relative;
-            background: linear-gradient(to bottom, #080808, #000);
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
         }
-        .scripture-frame::before, .scripture-frame::after {
-            content: ''; position: absolute; width: 15px; height: 15px; border: 1px solid #d4af37;
+
+        .verse-text {
+            font-size: 1.75rem;
+            line-height: 1.6;
+            font-weight: 300;
+            color: #e4e4e7;
+            letter-spacing: -0.01em;
+            transition: all 0.8s ease;
         }
-        .scripture-frame::before { top: -5px; left: -5px; border-right: 0; border-bottom: 0; }
-        .scripture-frame::after { bottom: -5px; right: -5px; border-left: 0; border-top: 0; }
+        
+        @media (min-width: 768px) {
+            .verse-text { font-size: 2.25rem; }
+            .scripture-display-card { padding: 5rem 4rem; }
+        }
+
+        .verse-reference {
+            font-family: 'Cinzel', serif;
+            color: var(--gold);
+            font-size: 0.75rem;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            margin-top: 2.5rem;
+            opacity: 0.8;
+        }
+
+        .verse-float { animation: fadeInUp 0.8s ease-out; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-bar-container {
+            height: 2px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <nav class="p-4 bg-black/95 border-b border-white/5 flex justify-between items-center sticky top-0 z-50">
-        <h1 class="font-sacred text-[#d4af37] tracking-[0.2em] text-xs cursor-pointer" onclick="location.reload()">THE LIVING WORD</h1>
-        <div class="flex items-center gap-4">
-            <input type="text" id="user-search" oninput="filterThemes()" placeholder="Search Library..." class="bg-white/5 border border-white/10 rounded-full px-4 py-1 text-[10px] outline-none focus:border-[#d4af37] w-32 md:w-48">
-            <button id="adm-nav-btn" onclick="showPage('login')" class="text-[9px] uppercase border border-[#d4af37] text-[#d4af37] px-4 py-1 rounded-full">Admin Access</button>
+    <nav class="p-5 bg-black/80 backdrop-blur-md border-b border-white/5 flex justify-between items-center sticky top-0 z-50">
+        <h1 class="font-sacred text-[#d4af37] tracking-[0.3em] text-[10px] md:text-xs cursor-pointer" onclick="location.reload()">THE LIVING WORD</h1>
+        <div class="flex items-center gap-6">
+            <input type="text" id="user-search" oninput="filterThemes()" placeholder="Search Archive..." class="bg-white/5 border border-white/10 rounded-full px-5 py-2 text-[10px] outline-none focus:border-[#d4af37] w-32 md:w-56 transition-all">
+            <button id="adm-nav-btn" onclick="showPage('login')" class="text-[9px] font-semibold uppercase border border-[#d4af37]/30 text-[#d4af37] px-5 py-2 rounded-full hover:bg-[#d4af37] hover:text-black transition-all">Admin Access</button>
         </div>
     </nav>
 
-    <section id="page-user" class="min-h-screen py-12 px-6">
-        <div id="grid-container" class="max-w-6xl mx-auto flex flex-wrap justify-center gap-10"></div>
+    <section id="page-user" class="min-h-screen py-20 px-6">
+        <div id="grid-container" class="max-w-7xl mx-auto flex flex-wrap justify-center gap-12"></div>
 
-        <div id="meditation-zone" class="hidden flex flex-col items-center pt-6">
-            <div class="w-full max-w-lg flex justify-between mb-8">
-                <button onclick="exitMeditation()" class="text-[10px] text-zinc-500 uppercase tracking-widest hover:text-red-500">✕ Close Sanctuary</button>
-                <div id="mic-status" class="text-[10px] text-[#d4af37] uppercase tracking-widest animate-pulse">Engaging Voice Engine...</div>
+        <div id="meditation-zone" class="hidden flex flex-col items-center max-w-4xl mx-auto">
+            <div class="w-full flex justify-between items-center mb-16">
+                <button onclick="exitMeditation()" class="text-[10px] text-zinc-500 font-medium uppercase tracking-[0.2em] hover:text-white transition-colors flex items-center gap-2">
+                    <span class="text-lg">←</span> Back to Library
+                </button>
+                <div id="mic-status" class="text-[10px] text-[#d4af37] font-bold uppercase tracking-[0.2em] flex items-center gap-2">
+                    <div class="w-2 h-2 bg-[#d4af37] rounded-full animate-ping"></div>
+                    Engine Active
+                </div>
             </div>
             
-            <div id="progress-container" class="w-full max-w-lg mb-12">
-                <div class="flex justify-between text-[9px] uppercase mb-2 text-zinc-500">
-                    <span>Scripture <span id="verse-count">1</span>/<span id="total-verses">1</span></span>
+            <div class="w-full mb-16">
+                <div class="flex justify-between text-[10px] uppercase font-bold tracking-widest mb-4 text-zinc-400">
+                    <span class="text-white">Scripture <span id="verse-count" class="text-[#d4af37]">1</span> <span class="opacity-30">/</span> <span id="total-verses">1</span></span>
                     <span id="word-match-stats">0% Manifested</span>
                 </div>
-                <div class="h-[1px] bg-white/10 w-full">
-                    <div id="verse-prog-bar" class="h-full bg-[#d4af37] w-0 transition-all duration-500"></div>
+                <div class="progress-bar-container">
+                    <div id="verse-prog-bar" class="h-full bg-[#d4af37] w-0 transition-all duration-700 ease-out"></div>
                 </div>
             </div>
 
-            <div class="max-w-3xl w-full text-center min-h-[350px] flex flex-col justify-center items-center">
-                <div class="scripture-frame w-full">
-                    <div id="active-verse-text" class="text-2xl md:text-4xl font-light italic text-zinc-300 verse-float leading-relaxed"></div>
-                    <div id="active-verse-ref" class="mt-10 font-sacred text-[#d4af37] text-[10px] tracking-[0.4em] uppercase"></div>
-                </div>
+            <div class="scripture-display-card text-center">
+                <div id="active-verse-text" class="verse-text verse-float"></div>
+                <div id="active-verse-ref" class="verse-reference"></div>
             </div>
 
-            <div class="flex gap-12 items-center mt-12">
-                <button id="btn-prev" onclick="prevVerse()" class="text-white/20 hover:text-white uppercase text-[10px] tracking-[0.2em]">Back</button>
-                <button id="btn-amen" disabled onclick="openAmenModal()" class="px-20 py-5 rounded-full border border-zinc-800 text-zinc-800 font-bold uppercase tracking-[0.3em] transition-all">Amen</button>
-                <button id="btn-next" onclick="nextVerse()" class="text-white/20 hover:text-white uppercase text-[10px] tracking-[0.2em]">Next</button>
+            <div class="flex gap-16 items-center mt-20">
+                <button id="btn-prev" onclick="prevVerse()" class="text-zinc-500 hover:text-white uppercase text-[10px] font-bold tracking-[0.3em] transition-colors">Previous</button>
+                <button id="btn-amen" disabled onclick="openAmenModal()" class="px-16 py-5 rounded-full border border-zinc-800 text-zinc-700 font-bold uppercase tracking-[0.4em] transition-all duration-500">Seal Amen</button>
+                <button id="btn-next" onclick="nextVerse()" class="text-zinc-500 hover:text-white uppercase text-[10px] font-bold tracking-[0.3em] transition-colors">Next Word</button>
             </div>
         </div>
     </section>
 
     <section id="page-login" class="hidden min-h-[80vh] flex items-center justify-center">
-        <div class="bg-zinc-900/30 p-10 rounded-[3rem] border border-white/5 w-80 text-center">
-            <h2 class="font-sacred text-[#d4af37] text-lg mb-8 uppercase tracking-widest">Identify</h2>
-            <input type="email" id="adm-email" placeholder="Sanctuary Email" class="w-full bg-black border border-white/10 p-4 rounded-2xl mb-4 outline-none focus:border-[#d4af37] text-xs">
-            <input type="password" id="adm-pass" placeholder="Password" class="w-full bg-black border border-white/10 p-4 rounded-2xl mb-8 outline-none focus:border-[#d4af37] text-xs">
-            <button onclick="handleLogin()" class="w-full btn-gold py-4 rounded-2xl text-[10px] uppercase tracking-widest">Enter Dashboard</button>
+        <div class="bg-zinc-900/20 p-12 rounded-[3rem] border border-white/5 w-96 text-center backdrop-blur-sm">
+            <h2 class="font-sacred text-[#d4af37] text-xl mb-10 uppercase tracking-[0.4em]">Sanctuary</h2>
+            <input type="email" id="adm-email" placeholder="Credential Email" class="w-full bg-black border border-white/5 p-5 rounded-2xl mb-4 outline-none focus:border-[#d4af37] text-xs transition-all">
+            <input type="password" id="adm-pass" placeholder="Security Token" class="w-full bg-black border border-white/5 p-5 rounded-2xl mb-10 outline-none focus:border-[#d4af37] text-xs transition-all">
+            <button onclick="handleLogin()" class="w-full btn-gold py-5 rounded-2xl text-[10px] uppercase tracking-widest">Authorize</button>
         </div>
     </section>
 
-    <section id="page-admin" class="hidden p-6 lg:p-12">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-white/5 pb-8">
+    <section id="page-admin" class="hidden p-8 lg:p-16">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-16 gap-8 border-b border-white/5 pb-12">
             <div>
-                <h2 class="font-sacred text-[#d4af37] text-2xl tracking-tighter">WORD ARCHITECT</h2>
-                <p class="text-[9px] text-zinc-500 uppercase mt-1 tracking-widest">Theme Management & Lead Extraction</p>
+                <h2 class="font-sacred text-[#d4af37] text-3xl tracking-tight">WORD ARCHITECT</h2>
+                <p class="text-[10px] text-zinc-500 uppercase mt-2 font-bold tracking-[0.3em]">Theme & Record Intelligence</p>
             </div>
             <div class="flex flex-wrap items-center gap-4">
-                <div class="flex flex-col gap-2">
-                    <select id="export-theme" class="bg-black border border-white/10 text-[10px] px-3 py-2 rounded-xl outline-none">
+                <div class="flex items-center gap-3">
+                    <select id="export-theme" class="bg-black border border-white/10 text-[10px] px-4 py-3 rounded-xl outline-none focus:border-[#d4af37]">
                         <option value="">Select Theme</option>
                     </select>
-                    <input type="date" id="export-date" class="bg-black border border-white/10 text-[10px] px-3 py-2 rounded-xl outline-none">
+                    <input type="date" id="export-date" class="bg-black border border-white/10 text-[10px] px-4 py-3 rounded-xl outline-none focus:border-[#d4af37]">
                 </div>
-                <button onclick="exportThemeDaily()" class="text-[9px] bg-green-950/20 text-green-500 px-6 py-3 rounded-full border border-green-500/30 font-bold uppercase">Export CSV</button>
-                <button onclick="handleLogout()" class="text-[9px] text-red-500 uppercase tracking-widest border border-red-500/20 px-4 py-3 rounded-full">Sign Out</button>
+                <button onclick="exportThemeDaily()" class="text-[9px] bg-white/5 hover:bg-white/10 text-white px-8 py-3.5 rounded-full border border-white/10 font-bold uppercase transition-all">Export Report</button>
+                <button onclick="handleLogout()" class="text-[9px] text-red-500 font-bold uppercase tracking-widest border border-red-500/20 px-6 py-3.5 rounded-full hover:bg-red-500/10 transition-all">Exit</button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div class="bg-zinc-950/50 p-10 rounded-[3rem] border border-white/5 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-16">
+            <div class="lg:col-span-5 bg-zinc-950/50 p-12 rounded-[4rem] border border-white/5 space-y-8">
                 <input type="hidden" id="edit-id">
                 <div>
-                    <label class="text-[9px] uppercase text-zinc-500 mb-2 block">Theme Identity</label>
-                    <input type="text" id="in-theme" placeholder="Title of Manifestation" class="w-full bg-black border border-white/10 p-5 rounded-3xl outline-none focus:border-[#d4af37] text-sm">
+                    <label class="text-[10px] font-bold uppercase text-zinc-500 mb-3 block tracking-widest">Theme Identity</label>
+                    <input type="text" id="in-theme" placeholder="Enter Theme Title" class="w-full bg-black border border-white/5 p-6 rounded-3xl outline-none focus:border-[#d4af37] text-sm transition-all">
                 </div>
                 
                 <div>
-                    <label class="text-[9px] uppercase text-zinc-500 mb-2 block">Visual Essence</label>
-                    <div class="p-6 border border-dashed border-white/10 rounded-3xl bg-black/40 text-center">
-                        <input type="file" id="in-file" accept="image/*" class="text-[10px] text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[9px] file:bg-zinc-800 file:text-zinc-300">
+                    <label class="text-[10px] font-bold uppercase text-zinc-500 mb-3 block tracking-widest">Visual Cover</label>
+                    <div class="p-8 border border-dashed border-white/10 rounded-3xl bg-black/40 text-center hover:border-[#d4af37]/50 transition-all">
+                        <input type="file" id="in-file" accept="image/*" class="text-[10px] text-zinc-500 file:mr-4 file:py-2 file:px-6 file:rounded-full file:border-0 file:text-[9px] file:bg-zinc-800 file:text-white file:font-bold">
                     </div>
                 </div>
 
-                <div id="verse-inputs" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                    </div>
+                <div id="verse-inputs" class="space-y-6 max-h-[500px] overflow-y-auto pr-4"></div>
 
                 <div class="flex gap-4">
-                    <button onclick="addVerseField()" class="flex-1 py-4 border border-white/10 rounded-3xl text-[9px] uppercase tracking-widest opacity-60 hover:opacity-100">+ Add Scripture</button>
-                    <button onclick="saveTheme()" class="flex-1 btn-gold py-4 rounded-3xl uppercase text-[10px] tracking-widest">Manifest Word</button>
+                    <button onclick="addVerseField()" class="flex-1 py-5 bg-white/5 border border-white/5 rounded-3xl text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all">Add Verse</button>
+                    <button onclick="saveTheme()" class="flex-1 btn-gold py-5 rounded-3xl uppercase text-[10px] tracking-widest">Manifest</button>
                 </div>
-                <button onclick="resetEditor()" class="w-full text-[8px] text-zinc-600 uppercase">Clear Draft</button>
             </div>
 
-            <div class="space-y-10">
-                <div class="bg-zinc-950/50 p-10 rounded-[3rem] border border-white/5">
-                    <h3 class="text-[10px] uppercase text-zinc-500 mb-8 tracking-[0.2em]">Seal Frequency</h3>
-                    <canvas id="leadsChart" height="180"></canvas>
+            <div class="lg:col-span-7 space-y-12">
+                <div class="bg-zinc-950/50 p-12 rounded-[4rem] border border-white/5">
+                    <h3 class="text-[10px] font-bold uppercase text-zinc-500 mb-10 tracking-[0.4em]">System Engagement</h3>
+                    <canvas id="leadsChart" height="200"></canvas>
                 </div>
                 
-                <div id="admin-theme-list" class="space-y-4">
-                    </div>
+                <div id="admin-theme-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
         </div>
     </section>
 
-    <div id="modal-amen" class="fixed inset-0 bg-black/98 hidden z-[100] flex items-center justify-center p-6 backdrop-blur-xl">
-        <div class="bg-zinc-900 p-12 rounded-[3rem] w-full max-w-sm text-center border border-[#d4af37]/10">
-            <h3 class="font-sacred text-[#d4af37] text-xl mb-8 tracking-widest">Seal Your Prayer</h3>
-            <input type="text" id="reg-name" placeholder="Full Name" class="w-full bg-black border border-white/10 p-5 rounded-3xl mb-4 outline-none text-sm">
-            <input type="tel" id="reg-phone" placeholder="Phone Number" class="w-full bg-black border border-white/10 p-5 rounded-3xl mb-10 outline-none text-sm">
-            <button onclick="submitAmen()" class="w-full btn-gold py-5 rounded-3xl text-xs uppercase tracking-[0.3em]">Submit Amen</button>
-            <button onclick="document.getElementById('modal-amen').classList.add('hidden')" class="mt-6 text-[9px] text-zinc-600 uppercase tracking-widest">Cancel</button>
+    <div id="modal-amen" class="fixed inset-0 bg-black/95 hidden z-[100] flex items-center justify-center p-6 backdrop-blur-2xl">
+        <div class="bg-zinc-900 p-12 rounded-[4rem] w-full max-w-md text-center border border-white/5 shadow-2xl">
+            <h3 class="font-sacred text-[#d4af37] text-2xl mb-4 tracking-widest">SEAL THE WORD</h3>
+            <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-10 font-medium">Record your affirmation</p>
+            <input type="text" id="reg-name" placeholder="Name" class="w-full bg-black border border-white/5 p-6 rounded-3xl mb-4 outline-none text-sm transition-all focus:border-[#d4af37]">
+            <input type="tel" id="reg-phone" placeholder="Phone" class="w-full bg-black border border-white/5 p-6 rounded-3xl mb-10 outline-none text-sm transition-all focus:border-[#d4af37]">
+            <button onclick="submitAmen()" class="w-full btn-gold py-6 rounded-3xl text-xs uppercase tracking-[0.4em]">Confirm Amen</button>
+            <button onclick="document.getElementById('modal-amen').classList.add('hidden')" class="mt-8 text-[9px] text-zinc-600 font-bold uppercase tracking-widest hover:text-white transition-colors">Cancel</button>
         </div>
     </div>
 
@@ -179,9 +243,8 @@
         let isMeditationActive = false;
         let currentThemeName = "";
         let completionStatus = []; 
-        let scriptureWords = []; // Logic updated to track repeated words separately
+        let scriptureWords = [];
 
-        // AUTH & NAVIGATION
         async function handleLogin() {
             const e = document.getElementById('adm-email').value;
             const p = document.getElementById('adm-pass').value;
@@ -195,7 +258,6 @@
             if(id === 'user') exitMeditation();
         }
 
-        // INITIALIZATION
         function initLibrary() {
             fb.onSnapshot(fb.query(fb.collection(fb.db, "themes"), fb.orderBy("timestamp", "desc")), (snap) => {
                 allThemes = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -209,16 +271,15 @@
         function renderGrid(themes) {
             const grid = document.getElementById('grid-container');
             grid.innerHTML = themes.map(t => `
-                <div onclick="openMeditation('${t.id}')" class="flex flex-col items-center gap-6 cursor-pointer group">
-                    <div class="theme-circle">
-                        <img src="${t.image || 'https://via.placeholder.com/150/050505/d4af37?text=The+Word'}" class="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition duration-1000">
+                <div onclick="openMeditation('${t.id}')" class="flex flex-col items-center gap-8 cursor-pointer group">
+                    <div class="theme-circle shadow-2xl">
+                        <img src="${t.image || 'https://via.placeholder.com/150/050505/d4af37?text=The+Word'}" class="w-full h-full object-cover opacity-30 group-hover:opacity-100 transition duration-700">
                     </div>
-                    <h3 class="font-sacred text-[10px] tracking-[0.3em] uppercase text-zinc-600 group-hover:text-[#d4af37] transition-colors">${t.theme}</h3>
+                    <h3 class="font-sacred text-[9px] tracking-[0.4em] uppercase text-zinc-500 group-hover:text-[#d4af37] transition-all">${t.theme}</h3>
                 </div>
             `).join('');
         }
 
-        // MEDITATION & VOICE ENGINE
         async function openMeditation(id) {
             const target = allThemes.find(t => t.id === id);
             activeVerses = target.verses;
@@ -230,7 +291,6 @@
             document.getElementById('meditation-zone').classList.remove('hidden');
             document.getElementById('total-verses').innerText = activeVerses.length;
             document.getElementById('btn-amen').disabled = true;
-            document.getElementById('btn-amen').className = "px-20 py-5 rounded-full border border-zinc-800 text-zinc-800 font-bold uppercase tracking-[0.3em] transition-all";
             
             isMeditationActive = true;
             loadVerse(0);
@@ -238,7 +298,6 @@
         }
 
         function loadVerse(index) {
-            // Map words into a tracking array to support repetitions
             scriptureWords = activeVerses[index].text.toLowerCase()
                 .split(/\W+/)
                 .filter(w => w.length > 2)
@@ -246,55 +305,43 @@
 
             const display = document.getElementById('active-verse-text');
             const refDisp = document.getElementById('active-verse-ref');
-            display.style.opacity = "0";
             
-            setTimeout(() => {
-                display.innerText = activeVerses[index].text;
-                refDisp.innerText = activeVerses[index].ref;
-                display.style.opacity = "1";
-                document.getElementById('verse-count').innerText = index + 1;
-                
-                const p = completionStatus[index] ? 100 : 0;
-                document.getElementById('verse-prog-bar').style.width = p + "%";
-                document.getElementById('word-match-stats').innerText = p + "% Manifested";
-                
-                if(recognition) {
-                    try { recognition.stop(); } catch(e) {}
-                }
-            }, 500);
+            display.classList.remove('verse-float');
+            void display.offsetWidth; // Trigger reflow
+            display.classList.add('verse-float');
+
+            // Format scripture into elegant paragraphs
+            const text = activeVerses[index].text;
+            display.innerHTML = text.length > 100 ? `<p class="mb-4">${text}</p>` : text;
+            refDisp.innerText = activeVerses[index].ref;
+            
+            document.getElementById('verse-count').innerText = index + 1;
+            const p = completionStatus[index] ? 100 : 0;
+            document.getElementById('verse-prog-bar').style.width = p + "%";
+            document.getElementById('word-match-stats').innerText = p + "% Manifested";
         }
 
         function startVoiceEngine() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if(!SpeechRecognition) {
-                document.getElementById('mic-status').innerText = "Voice API Unsupported";
-                return;
-            }
+            if(!SpeechRecognition) return;
             
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true;
             recognition.lang = 'en-US';
 
-            recognition.onstart = () => document.getElementById('mic-status').innerText = "Voice Engine Active";
-            
             recognition.onresult = (event) => {
                 if(!isMeditationActive) return;
                 let transcript = ""; 
                 for (let i = event.resultIndex; i < event.results.length; ++i) transcript += event.results[i][0].transcript.toLowerCase();
                 
                 const spokenWords = transcript.split(/\W+/);
-                
-                // For each spoken word, find the first occurrence in the scripture that hasn't been "met" yet
                 spokenWords.forEach(spoken => {
                     const target = scriptureWords.find(item => item.word === spoken && !item.met);
                     if(target) target.met = true;
                 });
 
-                const metCount = scriptureWords.filter(item => item.met).length;
-                const totalCount = scriptureWords.length;
-                const p = Math.round((metCount / totalCount) * 100);
-
+                const p = Math.round((scriptureWords.filter(item => item.met).length / scriptureWords.length) * 100);
                 document.getElementById('verse-prog-bar').style.width = p + "%";
                 document.getElementById('word-match-stats').innerText = p + "% Manifested";
 
@@ -312,8 +359,7 @@
             if(completionStatus.every(s => s === true)) {
                 const btn = document.getElementById('btn-amen');
                 btn.disabled = false;
-                btn.className = "px-20 py-5 rounded-full btn-gold text-black shadow-[0_0_30px_rgba(212,175,55,0.3)] font-bold uppercase tracking-[0.3em] scale-105 transition-all";
-                document.getElementById('word-match-stats').innerText = "Word Sealed. Ready for Amen.";
+                btn.className = "px-16 py-5 rounded-full btn-gold text-black shadow-2xl font-bold uppercase tracking-[0.4em] scale-105 transition-all";
             }
         }
 
@@ -326,27 +372,24 @@
             document.getElementById('grid-container').classList.remove('hidden');
         }
 
-        // ADMIN CRUD: EDIT, DELETE, UPLOAD
         function renderAdminList(themes) {
             const list = document.getElementById('admin-theme-list');
             list.innerHTML = themes.map(t => `
-                <div class="bg-zinc-900/40 p-6 rounded-[2rem] flex justify-between items-center border border-white/5 hover:border-[#d4af37]/30 transition-all group">
+                <div class="bg-zinc-900/40 p-8 rounded-[2.5rem] flex justify-between items-center border border-white/5 hover:border-[#d4af37]/30 transition-all">
                     <div>
                         <div class="text-[10px] font-sacred text-[#d4af37] tracking-widest uppercase">${t.theme}</div>
-                        <div class="text-[8px] text-zinc-600 mt-1 uppercase">${t.verses.length} Scriptures Archived</div>
+                        <div class="text-[8px] text-zinc-600 mt-2 font-bold uppercase">${t.verses.length} Scriptures</div>
                     </div>
-                    <div class="flex gap-4">
-                        <button onclick="loadForEdit('${t.id}')" class="text-[9px] text-zinc-400 hover:text-white uppercase tracking-widest">Edit</button>
-                        <button onclick="confirmDelete('${t.id}')" class="text-[9px] text-red-900 hover:text-red-500 uppercase tracking-widest">Delete</button>
+                    <div class="flex gap-6">
+                        <button onclick="loadForEdit('${t.id}')" class="text-[9px] font-bold text-zinc-400 hover:text-white uppercase tracking-widest transition-colors">Edit</button>
+                        <button onclick="confirmDelete('${t.id}')" class="text-[9px] font-bold text-red-900 hover:text-red-500 uppercase tracking-widest transition-colors">Delete</button>
                     </div>
                 </div>
             `).join('');
         }
 
         async function confirmDelete(id) {
-            if(confirm("Are you sure you want to remove this Word from the archive?")) {
-                await fb.deleteDoc(fb.doc(fb.db, "themes", id));
-            }
+            if(confirm("Permanently remove this word?")) await fb.deleteDoc(fb.doc(fb.db, "themes", id));
         }
 
         function loadForEdit(id) {
@@ -377,10 +420,8 @@
                         const canvas = document.createElement('canvas');
                         const MAX_W = 500;
                         const scale = MAX_W / img.width;
-                        canvas.width = MAX_W;
-                        canvas.height = img.height * scale;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        canvas.width = MAX_W; canvas.height = img.height * scale;
+                        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                         resolve(canvas.toDataURL('image/jpeg', 0.6));
                     };
                 };
@@ -391,15 +432,11 @@
             const id = document.getElementById('edit-id').value;
             const title = document.getElementById('in-theme').value;
             const fileInput = document.getElementById('in-file');
-            
-            if(!title) return alert("Theme title is required.");
+            if(!title) return alert("Title required.");
 
             let b64 = "";
-            if(fileInput.files[0]) { 
-                b64 = await compressImage(fileInput.files[0]); 
-            } else if(id) {
-                b64 = allThemes.find(x => x.id === id).image;
-            }
+            if(fileInput.files[0]) b64 = await compressImage(fileInput.files[0]);
+            else if(id) b64 = allThemes.find(x => x.id === id).image;
 
             const verses = [];
             document.querySelectorAll('.verse-entry').forEach(el => {
@@ -408,33 +445,24 @@
                 if(t && r) verses.push({ text: t, ref: r });
             });
 
-            if(verses.length === 0) return alert("At least one scripture is required.");
-
             const data = { theme: title, image: b64, verses, timestamp: new Date() };
-
             try {
-                if(id) {
-                    await fb.updateDoc(fb.doc(fb.db, "themes", id), data);
-                    alert("Word Updated.");
-                } else {
-                    await fb.addDoc(fb.collection(fb.db, "themes"), data);
-                    alert("Word Manifested.");
-                }
+                if(id) await fb.updateDoc(fb.doc(fb.db, "themes", id), data);
+                else await fb.addDoc(fb.collection(fb.db, "themes"), data);
                 resetEditor();
-            } catch(e) { alert("Logic Error: " + e.message); }
+            } catch(e) { alert(e.message); }
         }
 
-        // BIBLE API & FIELDS
         function addVerseField(val = {ref: '', text: ''}) {
             const div = document.createElement('div');
-            div.className = "verse-entry bg-black p-5 rounded-3xl border border-white/5 space-y-3 relative";
+            div.className = "verse-entry bg-black/40 p-6 rounded-[2rem] border border-white/5 space-y-4";
             div.innerHTML = `
-                <div class="flex gap-3">
-                    <input type="text" placeholder="Bible Ref (e.g. John 3:16)" class="v-ref flex-1 bg-zinc-900 border border-white/5 p-3 rounded-xl text-[10px] outline-none focus:border-[#d4af37]" value="${val.ref}">
-                    <button onclick="fetchVerse(this)" class="bg-zinc-800 px-4 rounded-xl text-[8px] uppercase font-bold text-[#d4af37]">Fetch API</button>
+                <div class="flex gap-4">
+                    <input type="text" placeholder="John 3:16" class="v-ref flex-1 bg-black border border-white/10 p-4 rounded-xl text-[10px] text-white outline-none focus:border-[#d4af37]" value="${val.ref}">
+                    <button onclick="fetchVerse(this)" class="bg-zinc-800 px-6 rounded-xl text-[8px] font-bold uppercase text-[#d4af37] hover:bg-zinc-700 transition-colors">Fetch KJV</button>
                 </div>
-                <textarea class="v-text w-full bg-zinc-900 border border-white/5 p-4 rounded-xl text-[11px] outline-none focus:border-[#d4af37] min-h-[80px]" placeholder="The Scripture Text...">${val.text}</textarea>
-                <button onclick="this.parentElement.remove()" class="text-[8px] text-red-900 uppercase hover:text-red-500">Remove Field</button>
+                <textarea class="v-text w-full bg-black border border-white/10 p-5 rounded-xl text-[11px] outline-none focus:border-[#d4af37] min-h-[100px]" placeholder="Scripture Text">${val.text}</textarea>
+                <button onclick="this.parentElement.remove()" class="text-[8px] font-bold text-red-900 uppercase hover:text-red-500 transition-colors">Remove Verse</button>
             `;
             document.getElementById('verse-inputs').appendChild(div);
         }
@@ -443,60 +471,43 @@
             const container = btn.closest('.verse-entry');
             const ref = container.querySelector('.v-ref').value;
             if(!ref) return;
-            btn.innerText = "Searching...";
+            btn.innerText = "Connecting...";
             try {
-                const res = await fetch(`https://bible-api.com/${ref}`);
+                // Modified to force KJV version
+                const res = await fetch(`https://bible-api.com/${ref}?translation=kjv`);
                 const data = await res.json();
                 if(data.text) {
                     container.querySelector('.v-text').value = data.text.trim();
-                    btn.innerText = "Success";
-                } else { btn.innerText = "Not Found"; }
+                    btn.innerText = "Fetched";
+                } else btn.innerText = "Failed";
             } catch(e) { btn.innerText = "Error"; }
         }
 
-        // LEAD SUBMISSION & EXPORT
         function openAmenModal() { document.getElementById('modal-amen').classList.remove('hidden'); }
         async function submitAmen() {
-            const n = document.getElementById('reg-name').value;
-            const p = document.getElementById('reg-phone').value;
-            if(!n || !p) return alert("Identify yourself to seal the word.");
-            await fb.addDoc(fb.collection(fb.db, "userLeads"), { 
-                name: n, phone: p, theme: currentThemeName, timestamp: new Date() 
-            });
-            alert("Your Amen has been recorded in the Sanctuary.");
+            const n = document.getElementById('reg-name').value, p = document.getElementById('reg-phone').value;
+            if(!n || !p) return alert("Details required.");
+            await fb.addDoc(fb.collection(fb.db, "userLeads"), { name: n, phone: p, theme: currentThemeName, timestamp: new Date() });
             location.reload();
         }
 
         async function exportThemeDaily() {
-            const theme = document.getElementById('export-theme').value;
-            const dateStr = document.getElementById('export-date').value;
+            const theme = document.getElementById('export-theme').value, dateStr = document.getElementById('export-date').value;
             if(!theme || !dateStr) return alert("Select Theme and Date.");
-
             const start = new Date(dateStr); start.setHours(0,0,0,0);
             const end = new Date(dateStr); end.setHours(23,59,59,999);
-
             const q = fb.query(fb.collection(fb.db, "userLeads"), fb.where("theme", "==", theme), fb.where("timestamp", ">=", start), fb.where("timestamp", "<=", end));
             const snap = await fb.getDocs(q);
-            const data = snap.docs.map(d => ({ 
-                Name: d.data().name, 
-                Phone: d.data().phone, 
-                Time: d.data().timestamp.toDate().toLocaleString() 
-            }));
-
-            if(data.length === 0) return alert("No seals found for this selection.");
+            const data = snap.docs.map(d => ({ Name: d.data().name, Phone: d.data().phone, Time: d.data().timestamp.toDate().toLocaleString() }));
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Seals");
             XLSX.writeFile(wb, `${theme}_${dateStr}.xlsx`);
         }
 
-        // UTILITIES
         function populateExportOptions() {
             const select = document.getElementById('export-theme');
-            if (select) {
-                select.innerHTML = '<option value="">Select Theme</option>' + 
-                    allThemes.map(t => `<option value="${t.theme}">${t.theme}</option>`).join('');
-            }
+            if (select) select.innerHTML = '<option value="">Select Theme</option>' + allThemes.map(t => `<option value="${t.theme}">${t.theme}</option>`).join('');
         }
         function filterThemes() {
             const term = document.getElementById('user-search').value.toLowerCase();
@@ -504,19 +515,18 @@
         }
         function initAnalytics() {
             fb.onSnapshot(fb.collection(fb.db, "userLeads"), (snap) => {
-                const leads = snap.docs.map(d => d.data());
-                const counts = {};
+                const leads = snap.docs.map(d => d.data()), counts = {};
                 leads.forEach(l => counts[l.theme] = (counts[l.theme] || 0) + 1);
                 const ctx = document.getElementById('leadsChart').getContext('2d');
                 if(window.myChart) window.myChart.destroy();
                 window.myChart = new Chart(ctx, {
                     type: 'bar',
-                    data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: '#d4af37', borderRadius: 10 }] },
+                    data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: '#d4af37', borderRadius: 20 }] },
                     options: { 
                         plugins: { legend: { display: false } },
                         scales: { 
-                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666' } },
-                            x: { grid: { display: false }, ticks: { color: '#666', font: { size: 8 } } }
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#444' } },
+                            x: { grid: { display: false }, ticks: { color: '#444', font: { size: 8 } } }
                         } 
                     }
                 });
@@ -528,10 +538,8 @@
             fb.onAuthStateChanged(fb.auth, u => { 
                 if(u) { 
                     const navBtn = document.getElementById('adm-nav-btn');
-                    if (navBtn) {
-                        navBtn.innerText = "Dashboard"; 
-                        navBtn.onclick = () => showPage('admin'); 
-                    }
+                    navBtn.innerText = "Dashboard"; 
+                    navBtn.onclick = () => showPage('admin'); 
                 } 
             });
         };
