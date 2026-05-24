@@ -345,7 +345,7 @@
                 document.getElementById('verse-prog-bar').style.width = p + "%";
                 document.getElementById('word-match-stats').innerText = p + "% Manifested";
 
-                if (p >= 75 || transcript.includes("amen")) {
+                if (p >= 65 || transcript.includes("amen")) {
                     completionStatus[currentVerseIndex] = true;
                     checkFinalAmen();
                 }
@@ -485,25 +485,120 @@
 
         function openAmenModal() { document.getElementById('modal-amen').classList.remove('hidden'); }
         async function submitAmen() {
-            const n = document.getElementById('reg-name').value, p = document.getElementById('reg-phone').value;
-            if(!n || !p) return alert("Details required.");
-            await fb.addDoc(fb.collection(fb.db, "userLeads"), { name: n, phone: p, theme: currentThemeName, timestamp: new Date() });
-            location.reload();
+
+    const n = document.getElementById('reg-name').value;
+    const p = document.getElementById('reg-phone').value;
+
+    if (!n || !p) return alert("Details required.");
+
+    await fb.addDoc(
+        fb.collection(fb.db, "userLeads"),
+        {
+            name: n,
+            phone: p,
+            theme: currentThemeName,
+            timestamp: new Date()
         }
+    );
+
+    // =========================
+    // ADMIN WHATSAPP MESSAGE
+    // =========================
+
+    const adminNumber = "254711176811";
+
+    const adminMessage =
+`NEW THEME COMPLETION
+
+Name: ${n}
+Phone: ${p}
+Theme: ${currentThemeName}`;
+
+    const adminWhatsAppURL =
+`https://wa.me/${adminNumber}?text=${encodeURIComponent(adminMessage)}`;
+
+    // =========================
+    // USER FEEDBACK MESSAGE
+    // =========================
+
+    let cleanUserNumber = p.replace(/\D/g, '');
+
+    // Convert local Kenyan number to international
+    if (cleanUserNumber.startsWith("0")) {
+        cleanUserNumber = "254" + cleanUserNumber.substring(1);
+    }
+
+    const userMessage =
+`Thank you ${n} for declaring God's words on the theme "${currentThemeName}".
+
+Our Pastor will call you and pray with you shortly.
+
+Be blessed.In Jesus Name`;
+
+    const userWhatsAppURL =
+`https://wa.me/${cleanUserNumber}?text=${encodeURIComponent(userMessage)}`;
+
+    // Open Admin WhatsApp
+    window.open(adminWhatsAppURL, "_blank");
+
+    // Open User WhatsApp
+    setTimeout(() => {
+        window.open(userWhatsAppURL, "_blank");
+    }, 1500);
+
+    // Reload page
+    setTimeout(() => {
+        location.reload();
+    }, 3000);
+}
 
         async function exportThemeDaily() {
-            const theme = document.getElementById('export-theme').value, dateStr = document.getElementById('export-date').value;
-            if(!theme || !dateStr) return alert("Select Theme and Date.");
-            const start = new Date(dateStr); start.setHours(0,0,0,0);
-            const end = new Date(dateStr); end.setHours(23,59,59,999);
-            const q = fb.query(fb.collection(fb.db, "userLeads"), fb.where("theme", "==", theme), fb.where("timestamp", ">=", start), fb.where("timestamp", "<=", end));
-            const snap = await fb.getDocs(q);
-            const data = snap.docs.map(d => ({ Name: d.data().name, Phone: d.data().phone, Time: d.data().timestamp.toDate().toLocaleString() }));
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Seals");
-            XLSX.writeFile(wb, `${theme}_${dateStr}.xlsx`);
-        }
+    const theme = document.getElementById('export-theme').value;
+    const dateStr = document.getElementById('export-date').value;
+
+    if (!theme || !dateStr) return alert("Select Theme and Date.");
+
+    const start = new Date(dateStr);
+    start.setHours(0,0,0,0);
+
+    const end = new Date(dateStr);
+    end.setHours(23,59,59,999);
+
+    const q = fb.query(
+        fb.collection(fb.db, "userLeads"),
+        fb.where("theme", "==", theme),
+        fb.where("timestamp", ">=", start),
+        fb.where("timestamp", "<=", end)
+    );
+
+    const snap = await fb.getDocs(q);
+
+    const data = snap.docs.map(d => ({
+        Name: d.data().name,
+        Phone: d.data().phone,
+        Theme: d.data().theme,
+        Time: d.data().timestamp.toDate().toLocaleString()
+    }));
+
+    if (data.length === 0) {
+        return alert("No records found for selected date.");
+    }
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const csv = XLSX.utils.sheet_to_csv(ws);
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${theme}_${dateStr}.csv`);
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
         function populateExportOptions() {
             const select = document.getElementById('export-theme');
