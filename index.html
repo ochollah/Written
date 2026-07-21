@@ -474,7 +474,7 @@
             btn.innerText = "Connecting...";
             try {
                 // Modified to force KJV version
-                const res = await fetch(`https://bible-api.com/${ref}?translation=AMP`);
+                const res = await fetch(`https://bible-api.com/${ref}?translation=KJV`);
                 const data = await res.json();
                 if(data.text) {
                     container.querySelector('.v-text').value = data.text.trim();
